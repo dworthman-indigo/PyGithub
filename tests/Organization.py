@@ -296,6 +296,21 @@ class Organization(Framework.TestCase):
         team = self.org.get_team_by_slug("Members")
         self.assertEqual(team.id, 141496)
 
+    @mock.patch("github.PublicKey.encrypt")
+    def testCreateDependabotSecret(self, encrypt):
+        # encrypt returns a non-deterministic value, we need to mock it so the replay data matches
+        encrypt.return_value = "M+5Fm/BqTfB90h3nC7F3BoZuu3nXs+/KtpXwxm9gG211tbRo0F5UiN0OIfYT83CKcx9oKES9Va4E96/b"
+        self.assertTrue(self.org.create_dependabot_secret("secret-name", "secret-value", "all"))
+
+    @mock.patch("github.PublicKey.encrypt")
+    def testCreateDependabotSecretSelected(self, encrypt):
+        # encrypt returns a non-deterministic value, we need to mock it so the replay data matches
+        repos = [self.org.get_repo("TestPyGithub"), self.org.get_repo("FatherBeaver")]
+        encrypt.return_value = "M+5Fm/BqTfB90h3nC7F3BoZuu3nXs+/KtpXwxm9gG211tbRo0F5UiN0OIfYT83CKcx9oKES9Va4E96/b"
+        self.assertTrue(
+            self.org.create_dependabot_secret("secret-name", "secret-value", "selected", repos)
+        )
+
     def testCreateHookWithMinimalParameters(self):
         hook = self.org.create_hook("web", {"url": "http://foobar.com"})
         self.assertEqual(hook.id, 257967)
@@ -398,6 +413,9 @@ class Organization(Framework.TestCase):
         self.assertTrue(
             self.org.create_secret("secret-name", "secret-value", "selected", repos)
         )
+
+    def testDeleteDependabotSecret(self):
+        self.assertTrue(self.org.delete_dependabot_secret("secret-name"))
 
     def testDeleteSecret(self):
         self.assertTrue(self.org.delete_secret("secret-name"))
